@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mi Cancionero Interactivo Profesional</title>
+  <style>
+    /* 1. CONFIGURACIÓN GENERAL DEL CONTENEDOR PRINCIPAL */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      overflow: hidden; 
+      background-color: #222222;
+    }
+
+    /* Estructura vertical: Arriba el índice, abajo el contenido dividido */
+    .pantalla-completa {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* 2. MARCO SUPERIOR: "INDICE" (Buscador, Abecedario y Botones) */
+    .marco-indice {
+      background-color: #800080;
+      padding: 8px 15px;
+      border-bottom: 2px solid #ccc;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+
+    .marco-indice h3 {
+      margin: 0 0 6px 0;
+      color: #DCDCDC;
+      font-size: 26px;
+      text-align: center;
+    }
+
+    .seccion-botones {
+      margin-bottom: 5px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .caja-busqueda {
+      width: 300px; 
+      padding: 5px 10px;
+      font-size: 13px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .caja-busqueda:focus {
+      border-color: #0066cc;
+      outline: none;
+    }
+
+    .selector-etiquetas {
+      padding: 4px 6px;
+      font-size: 13px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background-color: white;
+    }
+
+    button {
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background-color: white;
+      color: #333;
+    }
+
+    button:hover, button.activo {
+      background-color: #0066cc;
+      color: white;
+      border-color: #0066cc;
+    }
+
+    .boton-ordenar {
+      background-color: #28a745;
+      color: white;
+      border-color: #28a745;
+    }
+
+    /* 3. PARTE INFERIOR DIVIDIDA: "LISTA" (Izquierda) y "LETRA" (Derecha) */
+    .seccion-inferior {
+      display: flex;
+      flex-grow: 1;
+      height: calc(100% - 90px); 
+    } 
+
+    /* MARCO IZQUIERDO: "LISTA" (Ultra compacto, solo títulos de canciones) */
+    .marco-lista {
+      width: 280px;
+      min-width: 280px;
+      background-color: #DCDDD9;
+      border-right: 2px solid #ddd;
+      overflow-y: auto; 
+      padding: 6px;
+      box-sizing: border-box;
+    }
+
+    .lista-canciones {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .item-cancion {
+      background: white;
+      margin-bottom: 4px;
+      border-radius: 3px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      border-bottom: 1px solid #eee;
+    }
+
+    .item-cancion:hover {
+      background-color: #e6f2ff;
+    }
+
+    /* Enlace que inyecta la letra en el iframe derecho */
+    .item-cancion a {
+      text-decoration: none;
+      display: block;
+      padding: 6px 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .titulo-cancion {
+      font-size: 13px;
+      font-weight: bold;
+      color: #0066cc;
+    }
+
+    .artista-cancion {
+      font-size: 12px;
+      color: #666;
+      margin-left: 5px;
+    }
+
+    /* MARCO DERECHO: "LETRA" (Visor de las partituras) */
+    .marco-letra {
+      flex-grow: 1;
+      height: 100%;
+      border: none;
+      background-color: #ebebeb; 
+    }
+  </style>
+</head>
+<body>
+
+  <div class="pantalla-completa">
+    
+    <!-- === MARCO 1: "INDICE" (SUPERIOR) === -->
+    <div class="marco-indice">
+      <h3>🎹 CANCIONERO RELIGIOSO 🎹</h3>
+      
+      <div class="seccion-botones">
+        <button class="boton-ordenar" onclick="ordenarAlfabeticamente()">🔤 A-Z</button>
+        <button onclick="mostrarTodas()">📋 Todas</button>
+        
+        <select id="filtro-categoria" class="selector-etiquetas" onchange="filtrarPorCategoria()">
+          <option value="">-- Filtrar por Acto Litúrgico --</option>
+          <option value="entrada">Entrada</option>
+          <option value="ten piedad">Ten Piedad</option>
+          <option value="gloria">Gloria</option>
+          <option value="aleluya">Aleluya</option>
+          <option value="salmos">Salmos</option>
+          <option value="ofertorio">Ofertorio</option>
+          <option value="santo">Santo</option>
+          <option value="PN">PN</option>
+          <option value="paz">Paz</option>
+          <option value="comunión">Comunión</option>
+          <option value="gracias">Gracias</option>
+          <option value="alabanza">Alabanza</option>
+          <option value="final">Final</option>
+          <option value="maría">María</option>
+          <option value="adviento">Adviento</option>
+          <option value="navidad">Navidad</option>
+          <option value="cuaresma">Cuaresma</option>
+          <option value="resurrección">Resurrección</option>
+          <option value="pentecostés">Pentecostés</option>
+        </select> 
+
+        <input type="text" id="buscador-texto" class="caja-busqueda" placeholder="🔍 Buscar título, artista o etiqueta..." onkeyup="buscarPorTexto()">
+        <select id="filtro-autor" class="selector-menu" onchange="abrirPaginaAutor()">
+        <option value="">-- Discografías / Autores --</option>
+         <option value="AGU.htm">Agustín Sánchez</option>
+         <option value="ALBERTO.htm">Alberto y Emilia</option>
+         <option value="antoni.htm">Antoni Martorell</option>
+         <option value="brotes.htm">Brotes de Olivo</option>
+         <option value="CARMELO.htm">Carmelo Erdozaim</option>
+         <option value="cesareo.htm">Cesáreo Gabaráin</option>
+         <option value="COROS.htm">Coro Felix Boix</option>
+         <option value="espinosa.htm">Espinosa</option>
+         <option value="harijans.htm">Harijans</option>
+         <option value="glenda.htm">Hermana Glenda</option>
+         <option value="Ixcis.htm">Ixcis</option>
+         <option value="kairoi1.htm">Kairoi</option>
+         <option value="manzano.htm">Miguel Manzano</option>
+         <option value="migueli.htm">Migueli</option>
+         <option value="nico.htm">Nico Montero</option>
+         <option value="carismaticos.htm">Kiko Argüello</option>
+         <option value="propias.htm">Propias</option>
+         <option value="coro salesiano el paseo.htm">Misas Completas</option>
+         <option value="cine.htm">Musicales-Cine</option>
+        </select>
+
+      </div>
+
+      <!-- Abecedario compacto con la Ñ generado automáticamente -->
+      <div class="seccion-botones" id="contenedor-abecedario"></div>
+    </div>
+
+    <!-- SECCIÓN INFERIOR CONTENEDORA -->
+    <div class="seccion-inferior">
+      
+      <!-- === MARCO 2: "LISTA" (IZQUIERDO) === -->
+      <div class="marco-lista">
+        <ul class="lista-canciones" id="lista-canciones-ui"></ul>
+      </div>
+
+      <!-- === MARCO 3: "LETRA" (DERECHO - IFRAME) === -->
+      <iframe name="letra" class="marco-letra" src="bienvenida.html"></iframe>
+
+    </div>
+
+  </div>
+
+  <!-- === LÓGICA CENTRAL DE DATOS Y BÚSQUEDA === -->
+  <script>
+    // BASE DE DATOS REESCRITA CON EJEMPLOS REALES CORREGIDOS
+    var canciones = [
+      { titulo: "El Forito", artista: "Brotes de Olivo", archivo: "1973-01.htm", etiquetas: ["entrada"] },
+      { titulo: "Viaje de Ilusión", artista: "Brotes de Olivo", archivo: "1973-02.htm", etiquetas: [] },
+      { titulo: "Allanad los caminos", artista: "Brotes de Olivo", archivo: "allanad.htm", etiquetas: ["entrada", "adviento"] },
+      { titulo: "Las bodas de Caná", artista: "Brotes de Olivo", archivo: "las-bodas.htm", etiquetas: ["comunión"] },
+      { titulo: "El soplo de Dios", artista: "Brotes de Olivo", archivo: "el-soplo-de-dios.htm", etiquetas: ["entrada", "comunión"] },
+      { titulo: "El agua viva", artista: "Brotes de Olivo", archivo: "El-agua-viva.htm", etiquetas: ["comunión", "resurrección"] },
+      { titulo: "La piscina probática", artista: "Brotes de Olivo", archivo: "la-piscina.htm", etiquetas: ["comunión"] },
+      { titulo: "Quién tirará la primera piedra", artista: "Brotes de Olivo", archivo: "quien_tirara.htm", etiquetas: ["comunión"] },
+      { titulo: "El Buen Pastor", artista: "Brotes de Olivo", archivo: "El Buen Pastor.htm", etiquetas: ["entrada", "comunión"] },
+      { titulo: "Vivid en el Señor", artista: "Brotes de Olivo", archivo: "Vivir-en-el-señor.htm", etiquetas: ["comunión", "gracias"] },
+      { titulo: "Amaos unos a otros", artista: "Brotes de Olivo", archivo: "Amaos_unos.htm", etiquetas: ["comunión", "cuaresma"] },
+      { titulo: "Yo soy el que sirve", artista: "Brotes de Olivo", archivo: "yo-soy-el-que-sirve.htm", etiquetas: ["comunión","cuaresma"] },
+      { titulo: "La vid y los sarmientos", artista: "Brotes de Olivo", archivo: "LaVid.htm", etiquetas: ["entrada", "comunión"] },
+      { titulo: "Siempre estaré con vosotros", artista: "Brotes de Olivo", archivo: "Siempre-estare.htm", etiquetas: ["comunión"] },
+      { titulo: "El juicio de Cristo", artista: "Brotes de Olivo", archivo: "El-Juicio.htm", etiquetas: ["comunión"] },
+      { titulo: "Aleluya, el Señor resucitó", artista: "Brotes de Olivo", archivo: "Aleluya-El-señor-resucito.htm", etiquetas: ["aleluya", "resurrección"] },
+      { titulo: "Señor, mírame", artista: "Brotes de Olivo", archivo: "1974b01.htm", etiquetas: ["comunión", "entrada"] },
+      { titulo: "Ten piedad", artista: "Brotes de Olivo", archivo: "1974b02.htm", etiquetas: ["ten piedad"] },
+      { titulo: "He oído tu voz", artista: "Brotes de Olivo", archivo: "1974b03.htm", etiquetas: ["comunión", "gracias"] },
+      { titulo: "Pan y vino de amor", artista: "Brotes de Olivo", archivo: "1974b04.htm", etiquetas: ["comunión"] },
+      { titulo: "Santo", artista: "Brotes de Olivo", archivo: "1974b05.htm", etiquetas: ["santo"] },
+      { titulo: "Padre Nuestro", artista: "Brotes de Olivo", archivo: "1974b06.htm", etiquetas: ["PN"] },
+      { titulo: "Ven junto a mi", artista: "Brotes de Olivo", archivo: "1974b07.htm", etiquetas: ["comunión"] },
+      { titulo: "Nadie contestó", artista: "Brotes de Olivo", archivo: "1974b08.htm", etiquetas: ["comunión"] },
+      { titulo: "Tras las huellas del Padre", artista: "Brotes de Olivo", archivo: "1974b09.htm", etiquetas: ["comunión"] },
+      { titulo: "Tierra", artista: "Brotes de Olivo", archivo: "1974b10.htm", etiquetas: [""] },
+      { titulo: "Sinfonía de las vocales", artista: "Brotes de Olivo", archivo: "1974b11.htm", etiquetas: [""] },
+      { titulo: "Todos juntos", artista: "Brotes de Olivo", archivo: "1974b12.htm", etiquetas: ["comunión", "gracias", "entrada"] },
+      { titulo: "Y el séptimo descansó", artista: "Brotes de Olivo", archivo: "1974b13.htm", etiquetas: ["comunión"] },
+      { titulo: "Señor, envíanos a tu hijo", artista: "Brotes de Olivo", archivo: "1974c01.htm", etiquetas: ["comunión", "navidad", "entrada", "adviento"] },
+      { titulo: "Monólogo de Zacarías", artista: "Brotes de Olivo", archivo: "1974c02.htm", etiquetas: ["navidad", "comunión", "adviento"] },
+      { titulo: "Magníficat", artista: "Brotes de Olivo", archivo: "1974c03.htm", etiquetas: ["navidad", "adviento", "maría", "comunión", "entrada"] },
+      { titulo: "Buscando posada", artista: "Brotes de Olivo", archivo: "1974c04.htm", etiquetas: ["navidad", "comunión"] },
+      { titulo: "Madre de Dios", artista: "Brotes de Olivo", archivo: "1974c05.htm", etiquetas: ["navidad", "maría", "comunión"] },
+      { titulo: "Gloria a Dios en el cielo", artista: "Brotes de Olivo", archivo: "1974c06.htm", etiquetas: ["navidad", "gloria"] },
+      { titulo: "Navidad en el corazón", artista: "Brotes de Olivo", archivo: "1974c07.htm", etiquetas: ["navidad", "comunión"] },
+      { titulo: "Bien Nacido", artista: "Brotes de Olivo", archivo: "1974c08.htm", etiquetas: ["navidad", "comunión"] },
+      { titulo: "Las ropas de Dios", artista: "Brotes de Olivo", archivo: "1974c09.htm", etiquetas: ["navidad", "comunión",] },
+      { titulo: "Los pájaros pastores", artista: "Brotes de Olivo", archivo: "1974c10.htm", etiquetas: ["navidad", "comunión"] },
+      { titulo: "La serranilla", artista: "Brotes de Olivo", archivo: "1974c11.htm", etiquetas: ["navidad"] },
+      { titulo: "El golfillo", artista: "Brotes de Olivo", archivo: "1974c12.htm", etiquetas: ["navidad", "comunión", ] },
+      { titulo: "Sueños de riqueza", artista: "Brotes de Olivo", archivo: "1974c13.htm", etiquetas: ["navidad", "comunión"] },
+      { titulo: "Desde el vientre de mi madre", artista: "Brotes de Olivo", archivo: "197501.htm", etiquetas: ["comunión", "entrada"] },
+      { titulo: "Utopía", artista: "Brotes de Olivo", archivo: "197502.htm", etiquetas: ["comunión"] },
+      { titulo: "Despertar en los caminos", artista: "Brotes de Olivo", archivo: "197503.htm", etiquetas: ["comunión", "entrada"] },
+      { titulo: "Me gusta a mí", artista: "Brotes de Olivo", archivo: "197504.htm", etiquetas: ["comunión"] },
+      { titulo: "Aguas estancadas", artista: "Brotes de Olivo", archivo: "197505.htm", etiquetas: ["comunión"] },
+      { titulo: "Perdonemos", artista: "Brotes de Olivo", archivo: "197506.htm", etiquetas: ["comunión"] },
+      { titulo: "Mirando atrás", artista: "Brotes de Olivo", archivo: "197507.htm", etiquetas: ["comunión"] },
+      { titulo: "Cosas de Dios", artista: "Brotes de Olivo", archivo: "197508.htm", etiquetas: ["comunión"] },
+      { titulo: "Cosas Nuevas", artista: "Brotes de Olivo", archivo: "197509.htm", etiquetas: ["comunión", "resurrección", "final"] },
+      { titulo: "Nieve, sol, llanto y amor", artista: "Brotes de Olivo", archivo: "197510.htm", etiquetas: ["comunión"] },
+      { titulo: "Silencio", artista: "Brotes de Olivo", archivo: "197511.htm", etiquetas: ["comunión"] },
+      { titulo: "Te dejaré", artista: "Brotes de Olivo", archivo: "197512.htm", etiquetas: ["comunión"] },
+      { titulo: "Jesús, ¿Quién eres tú?", artista: "Brotes de Olivo", archivo: "197601.htm", etiquetas: ["entrada", "comunión"] },
+      { titulo: "El reino está cerca", artista: "Brotes de Olivo", archivo: "197602.htm", etiquetas: ["comunión"] },
+      { titulo: "Nadie es profeta en su tierra", artista: "Brotes de Olivo", archivo: "197603.htm", etiquetas: ["comunión", "entrada"] },
+      { titulo: "Los mercaderes del templo", artista: "Brotes de Olivo", archivo: "197604.htm", etiquetas: ["comunión"] },
+      { titulo: "La sal y la luz", artista: "Brotes de Olivo", archivo: "197605.htm", etiquetas: [ "comunión"] },
+      { titulo: "A tu altar he llegado", artista: "Brotes de Olivo", archivo: "197606.htm", etiquetas: ["entrada", "comunión"] },
+      { titulo: "La fe del centurión", artista: "Brotes de Olivo", archivo: "197607.htm", etiquetas: ["comunión"] },
+      { titulo: "Amad a los enemigos", artista: "Brotes de Olivo", archivo: "197608.htm", etiquetas: ["paz", "comunión"] },
+      { titulo: "Desapercibido", artista: "Brotes de Olivo", archivo: "197609.htm", etiquetas: ["comunión"] },
+      { titulo: "¿Dónde está tu tesoro?", artista: "Brotes de Olivo", archivo: "197610.htm", etiquetas: ["comunión"] },
+      { titulo: "Echad las redes", artista: "Brotes de Olivo", archivo: "197611.htm", etiquetas: ["navidad"] },
+      { titulo: "Ovejas entre lobos", artista: "Brotes de Olivo", archivo: "197612.htm", etiquetas: ["comunión"] },
+      { titulo: "Paz a vosotros", artista: "Brotes de Olivo", archivo: "197613.htm", etiquetas: ["paz", "comunión"] },
+      { titulo: "Multiplicación de panes y peces",  artista: "Brotes de Olivo", archivo: "197614.htm", etiquetas: ["comunión"] },
+      { titulo: "Hombres de poca fe", artista: "Brotes de Olivo", archivo: "197615.htm", etiquetas: ["comunión"] },
+      { titulo: "La oveja perdida", artista: "Brotes de Olivo", archivo: "197616.htm", etiquetas: ["comunión"] },
+      { titulo: "Toma tu cruz y sígueme", artista: "Brotes de Olivo", archivo: "197617.htm", etiquetas: ["comunión"] },
+      { titulo: "¿Darás la mitad de tus vienes?", artista: "Brotes de Olivo", archivo: "197618.htm", etiquetas: [ "comunión"] },
+      { titulo: "Dejadlos venir a mí", artista: "Brotes de Olivo", archivo: "197619.htm", etiquetas: ["entrada", "comunión"] },
+      { titulo: "El joven rico", artista: "Brotes de Olivo", archivo: "197620.htm", etiquetas: ["comunión"] },
+      { titulo: "Si tú hubieras estado aquí", artista: "Brotes de Olivo", archivo: "197621.htm", etiquetas: ["comunión"] },
+      { titulo: "El juicio final", artista: "Brotes de Olivo", archivo: "197622.htm", etiquetas: ["comunión"] },
+      { titulo: "Ven a mí", artista: "Brotes de Olivo", archivo: "197623.htm", etiquetas: ["comunión"] },
+      { titulo: "Jesús, tú eres", artista: "Brotes de Olivo", archivo: "197624.htm", etiquetas: ["entrada", "comunión"] },
+      { titulo: "María de la historia", artista: "Brotes de Olivo", archivo: "197701.htm", etiquetas: ["maría", "comunión"] },
+      { titulo: "El gran compromiso", artista: "Brotes de Olivo", archivo: "197702.htm", etiquetas: ["maría", "comunión"] },
+      { titulo: "Sacando agua del pozo", artista: "Brotes de Olivo", archivo: "197703.htm", etiquetas: ["maría", "comunión"] },
+      { titulo: "No tenemos que comer", artista: "Brotes de Olivo", archivo: "197704.htm", etiquetas: ["maría", "comunión"] },
+      { titulo: "Una visita imprevista", artista: "Brotes de Olivo", archivo: "197705.htm", etiquetas: ["maría", "comunión"] },
+      { titulo: "Troncos para quemar", artista: "Brotes de Olivo", archivo: "197706.htm", etiquetas: ["maría", "comunión"] },
+      { titulo: "Qué nueve meses más largos", artista: "Brotes de Olivo", archivo: "197707.htm", etiquetas: ["maría", "comunión"] },
+      { titulo: "Parto de la vida", artista: "Brotes de Olivo", archivo: "197708.htm", etiquetas: ["maría", "comunión"] },
+      { titulo: "María errante", artista: "Brotes de Olivo", archivo: "197709.htm", etiquetas: ["maría", "comunión"] },
+      { titulo: "Se ha perdido Jesús", artista: "Brotes de Olivo", archivo: "197710.htm", etiquetas: ["maría", "comunión"] },
+      { titulo: "Monólogo ante la Cruz", artista: "Brotes de Olivo", archivo: "197711.htm", etiquetas: ["maría", "comunión"] },
+      { titulo: "María de la espera", artista: "Brotes de Olivo", archivo: "197712.htm", etiquetas: ["maría", "comunión"] },
+
+      { titulo: "El Forito", artista: "Brotes de Olivo", archivo: "hacia_ti.html", etiquetas: ["entrada", "cuaresma"] }
+    ];
+
+    var cancionesFiltradas = canciones.slice(); 
+    var letraFiltroActual = ""; 
+
+    // Generar botones del abecedario incluyendo explícitamente la Ñ en la barra superior
+    var abecedario = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","Ñ","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
+    var contenedorLetras = document.getElementById("contenedor-abecedario");
+
+    abecedario.forEach(function(letra) {
+      var boton = document.createElement("button");
+      boton.innerText = letra;
+      boton.onclick = function() { filtrarPorLetra(letra, this); };
+      contenedorLetras.appendChild(boton);
+    });
+
+    // Dibuja los resultados en el panel "LISTA" de la izquierda
+    function renderizarLista(lista) {
+      var ul = document.getElementById("lista-canciones-ui");
+      ul.innerHTML = ""; 
+
+      if (lista.length === 0) {
+        ul.innerHTML = '<li style="padding:10px; color:#999; font-size:12px; text-align:center;">No hay resultados.</li>';
+        return;
+      }
+
+      lista.forEach(function(cancion) {
+        var li = document.createElement("li");
+        li.className = "item-cancion";
+        
+        // Estructura de texto limpia para evitar fallos de lectura en local
+        li.innerHTML = '<a href="' + cancion.archivo + '" target="letra" title="' + cancion.titulo + ' - ' + cancion.artista + '">' +
+                       '<span class="titulo-cancion">' + cancion.titulo + '</span>' +
+                       '<span class="artista-cancion">- ' + cancion.artista + '</span>' +
+                       '</a>';
+        ul.appendChild(li);
+      });
+    }
+
+    // Lógica del Buscador Inteligente por texto y etiquetas ocultas
+    function buscarPorTexto() {
+      var textoBuscado = document.getElementById("buscador-texto").value.trim().toLowerCase();
+      var categoriaSeleccionada = document.getElementById("filtro-categoria").value;
+      
+      var baseFiltrado = canciones;
+      
+      if (letraFiltroActual) {
+        baseFiltrado = baseFiltrado.filter(function(c) {
+          return c.titulo.trim().toUpperCase().indexOf(letraFiltroActual) === 0;
+        });
+      }
+
+      if (categoriaSeleccionada) {
+        baseFiltrado = baseFiltrado.filter(function(cancion) {
+          return cancion.etiquetas.indexOf(categoriaSeleccionada) !== -1;
+        });
+      }
+
+      cancionesFiltradas = baseFiltrado.filter(function(cancion) {
+        var tituloMatch = cancion.titulo.toLowerCase().indexOf(textoBuscado) !== -1;
+        var artistaMatch = cancion.artista.toLowerCase().indexOf(textoBuscado) !== -1;
+        var etiquetaMatch = cancion.etiquetas.some(function(tag) {
+          return tag.indexOf(textoBuscado) !== -1;
+        });
+        
+        return tituloMatch || artistaMatch || etiquetaMatch;
+      });
+
+      renderizarLista(cancionesFiltradas);
+    }
+
+    function filtrarPorCategoria() {
+      buscarPorTexto();
+    }
+
+    function ordenarAlfabeticamente() {
+      cancionesFiltradas.sort(function(a, b) {
+        return a.titulo.localeCompare(b.titulo);
+      });
+      renderizarLista(cancionesFiltradas);
+    }
+
+    function filtrarPorLetra(letra, botonPresionado) {
+      document.querySelectorAll("#contenedor-abecedario button").forEach(function(b) {
+        b.classList.remove("activo");
+      });
+      botonPresionado.classList.add("activo");
+      letraFiltroActual = letra;
+      buscarPorTexto();
+    }
+
+    function mostrarTodas() {
+      document.querySelectorAll("#contenedor-abecedario button").forEach(function(b) {
+        b.classList.remove("activo");
+      });
+      document.getElementById("buscador-texto").value = ""; 
+      document.getElementById("filtro-categoria").value = ""; 
+      letraFiltroActual = "";
+      cancionesFiltradas = canciones.slice();
+      renderizarLista(cancionesFiltradas);
+    }
+
+    // Inicialización del sistema al cargar la página
+    window.onload = function() {
+      renderizarLista(canciones);
+    };
+    function abrirPaginaAutor() {
+  var selector = document.getElementById("filtro-autor");
+  var archivoAutor = selector.value;
+
+  if (archivoAutor !== "") {
+    // El comando "_blank" es el truco para obligar al PC a abrir otra pestaña limpia
+    window.open(archivoAutor, "_blank");
+    
+    // Resetea el menú para que vuelva a mostrar el título principal
+    selector.value = "";
+  }
+}
+  </script>
+
+</body>
+</html>
